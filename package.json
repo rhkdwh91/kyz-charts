@@ -1,0 +1,14 @@
+{
+  "name": "monorepo-charts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "pnpm --filter web dev"
+  },
+  "author": "",
+  "license": "MIT",
+  "workspaces": ["packages/*", "apps/*"],
+  "packageManager": "pnpm@9.5.0"
+}
