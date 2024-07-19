@@ -34,17 +34,55 @@ const HeatTreatmentChart: React.FC = () => {
     ]);
     const [fullStages, setFullStages] = useState<string[]>(FullState);
     const svgRef = useRef<SVGSVGElement | null>(null);
+    const svgRef2 = useRef<SVGSVGElement | null>(null);
+
+    useEffect(() => {
+        if (!svgRef2.current) return;
+
+        const svg = d3.select(svgRef2.current);
+        const width = 700;
+        const height = 300;
+        const margin = { top: 20, right: 20, bottom: 100, left: 20 };
+
+        svg.attr("width", width).attr("height", height);
+
+        const x = d3
+            .scaleLinear()
+            .domain([0, fullStages.length - 1])
+            .range([margin.left, width - margin.right]);
+
+        const y = d3
+            .scaleLinear()
+            .domain([0, 100])
+            .range([height - margin.bottom, margin.top]);
+
+        const line = d3
+            .line<DataPoint>()
+            .x((_d, i) => x(i))
+            .y((d) => y(d.value))
+            .curve(d3.curveCardinal);
+
+        // 라인 그래프 그리기
+        const linePath = svg.select<SVGPathElement>(".line-path").empty()
+            ? svg.append("path").attr("class", "line-path")
+            : svg.select<SVGPathElement>(".line-path");
+
+        linePath
+            .datum(futureDummyData)
+            .attr("fill", "none")
+            .attr("stroke", "#ededed")
+            .attr("stroke-width", 1)
+            .transition()
+            .duration(1000)
+            .attr("d", line);
+
+    }, []);
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (data.length < fullStages.length) {
-                const newData = [...data, futureDummyData[data.length]];
-                setData(newData);
-            } else {
-                const randomNumber = Math.floor(Math.random() * 100);
-                setData((pre) => [...pre, {stage: "정상화", value: randomNumber}]);
-                setFullStages([...data.map((d) => d.stage), "다음 단계", "최종 단계"]);
-            }
+            const randomNumber = Math.floor(Math.random() * 100);
+            setData((pre) => [...pre, {stage: "정상화", value: randomNumber}]);
+            setFullStages([...data.map((d) => d.stage), "다음 단계", "최종 단계"]);
         }, 5000);
 
         return () => clearTimeout(timer);
@@ -83,6 +121,23 @@ const HeatTreatmentChart: React.FC = () => {
             .y0(height - margin.bottom)
             .y1((d) => y(d.value))
             .curve(d3.curveCardinal);
+
+
+        // 현재 데이터 좌측으로 rect
+        const rect = svg.select<SVGRectElement>(".rect").empty()
+            ? svg.append("rect").attr("class", "rect")
+            : svg.select<SVGRectElement>("rect");
+
+        rect
+            .transition()
+            .duration(1000)
+            .attr('x', margin.left)
+            .attr('y', margin.top)
+            .transition()
+            .duration(1000)
+            .attr('width', x(data.length - 1) - margin.left)
+            .attr('height', height - margin.top - margin.bottom)
+            .attr('fill', '#242424');  // 연한 녹색 배경
 
         // 그라데이션 정의
         const gradient = svg.select("defs").empty()
@@ -142,9 +197,9 @@ const HeatTreatmentChart: React.FC = () => {
         lineGradient
             .append("stop")
             .attr("offset", "0%")
-            .attr("stop-color", "rgba(19, 242, 135, 1)");
+            .attr("stop-color", "rgba(19, 242, 135, 0.01)");
 
-        gradient
+        lineGradient
             .append("stop")
             .attr("offset", "50%")
             .attr("stop-color", "rgba(19, 242, 135, 1)");
@@ -152,7 +207,7 @@ const HeatTreatmentChart: React.FC = () => {
         lineGradient
             .append("stop")
             .attr("offset", "100%")
-            .attr("stop-color", "rgba(19, 242, 135, 1)");
+            .attr("stop-color", "rgba(19, 242, 135, 0.01)");
 
         // 영역 그래프 그리기
 
@@ -181,18 +236,6 @@ const HeatTreatmentChart: React.FC = () => {
             .duration(1000)
             .attr("d", line);
 
-        // 미래 데이터 라인 그리기
-        const futureLine = svg.select<SVGPathElement>('.future-line').empty() ?
-            svg.append('path').attr('class', 'future-line') :
-            svg.select<SVGPathElement>('.future-line');
-
-        futureLine
-            .datum(futureDummyData)
-            .attr('fill', 'none')
-            .attr('stroke', '#aaa')
-            .attr('stroke-width', 1)
-            .attr('d', line);
-
         // 현재 데이터 포인트만 표시 (마지막 데이터)
         const currentData = data[data.length - 1];
         const dot = svg.select<SVGCircleElement>(".current-dot").empty()
@@ -208,6 +251,7 @@ const HeatTreatmentChart: React.FC = () => {
             .attr("fill", "#2ecc71")
             .attr("stroke", "#2ecc71")
             .attr("stroke-width", 2);
+
 
         // 현재 데이터 세로선 표시
         const verticalLine = svg.select<SVGLineElement>(".vertical-line").empty()
@@ -257,7 +301,11 @@ const HeatTreatmentChart: React.FC = () => {
             .attr("fill", "#2ecc71");
     }, [data]);
 
-    return <svg ref={svgRef}></svg>;
+    useEffect(() => {
+
+    }, [])
+
+    return <main><svg ref={svgRef} style={{ position: "absolute" }}></svg><svg ref={svgRef2}></svg></main>;
 };
 
 export default HeatTreatmentChart;
