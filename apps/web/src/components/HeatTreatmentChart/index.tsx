@@ -25,7 +25,7 @@ const futureDummyData: DataPoint[] = FullState.map((stage) => ({
 
 const HeatTreatmentChart: React.FC = () => {
     const [data, setData] = useState<DataPoint[]>([
-        { stage: "온도 하강", value: 10 },
+        { stage: "온도 하강", value: 40 },
         { stage: "온도 유지", value: 30 },
         { stage: "승온 시작", value: 50 },
         { stage: "승온 완료", value: 90 },
@@ -80,7 +80,7 @@ const HeatTreatmentChart: React.FC = () => {
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            const randomNumber = Math.floor(Math.random() * 100);
+            const randomNumber = Math.floor(Math.random() * 40 + 50);
             setData((pre) => [...pre, {stage: "정상화", value: randomNumber}]);
             setFullStages([...data.map((d) => d.stage), "다음 단계", "최종 단계"]);
         }, 5000);
