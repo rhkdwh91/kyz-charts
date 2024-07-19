@@ -1,5 +1,3 @@
-import { useState } from 'react'
-
 import './App.css'
 import HeatTreatmentChart from "./components/HeatTreatmentChart"
 
