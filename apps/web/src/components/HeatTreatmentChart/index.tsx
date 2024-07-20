@@ -1,6 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 
+const datas = [
+    { stage: "온도 하강", value: 40 },
+    { stage: "온도 유지", value: 30 },
+    { stage: "승온 시작", value: 50 },
+    { stage: "승온 완료", value: 90 },
+    { stage: "티끌 정입", value: 90 },
+    { stage: "정상화", value: 85 },
+    { stage: "다음 단계", value: 90 },
+    { stage: "최종 단계", value: 100 },
+]
+
 interface DataPoint {
     stage: string;
     value: number;
@@ -24,27 +35,33 @@ const futureDummyData: DataPoint[] = FullState.map((stage) => ({
 }));
 
 const HeatTreatmentChart: React.FC = () => {
-    const [data, setData] = useState<DataPoint[]>([
-        { stage: "온도 하강", value: 40 },
-        { stage: "온도 유지", value: 30 },
-        { stage: "승온 시작", value: 50 },
-        { stage: "승온 완료", value: 90 },
-        { stage: "티끌 정입", value: 90 },
-        { stage: "정상화", value: 85 },
-    ]);
+    const [data, setData] = useState<DataPoint[]>([]);
     const [fullStages, setFullStages] = useState<string[]>(FullState);
     const svgRef = useRef<SVGSVGElement | null>(null);
     const svgRef2 = useRef<SVGSVGElement | null>(null);
 
     useEffect(() => {
+        const timer = setTimeout(() => {
+            if (data.length === datas.length) return;
+            setData((pre) => [...pre, datas[data.length]]);
+            const findIndex = fullStages.findIndex((stage) => stage === data[data.length - 1].stage)
+            const remainStages = findIndex !== -1 ? fullStages.slice(findIndex + 1) : []
+            setFullStages([...data.map((d) => d.stage), ...remainStages]);
+        }, 3000);
+
+        return () => clearTimeout(timer);
+    }, [data]);
+
+
+    useEffect(() => {
         if (!svgRef2.current) return;
 
-        const svg = d3.select(svgRef2.current);
-        const width = 700;
-        const height = 300;
+        const svg2 = d3.select(svgRef2.current);
+        const width = 500;
+        const height = 200;
         const margin = { top: 20, right: 20, bottom: 100, left: 20 };
 
-        svg.attr("width", width).attr("height", height);
+        svg2.attr("width", width).attr("height", height);
 
         const x = d3
             .scaleLinear()
@@ -53,7 +70,7 @@ const HeatTreatmentChart: React.FC = () => {
 
         const y = d3
             .scaleLinear()
-            .domain([0, 100])
+            .domain([0, 120])
             .range([height - margin.bottom, margin.top]);
 
         const line = d3
@@ -63,14 +80,14 @@ const HeatTreatmentChart: React.FC = () => {
             .curve(d3.curveCardinal);
 
         // 라인 그래프 그리기
-        const linePath = svg.select<SVGPathElement>(".line-path").empty()
-            ? svg.append("path").attr("class", "line-path")
-            : svg.select<SVGPathElement>(".line-path");
+        const linePath = svg2.select<SVGPathElement>(".line-path").empty()
+            ? svg2.append("path").attr("class", "line-path")
+            : svg2.select<SVGPathElement>(".line-path");
 
         linePath
             .datum(futureDummyData)
             .attr("fill", "none")
-            .attr("stroke", "#ededed")
+            .attr("stroke", "#444")
             .attr("stroke-width", 1)
             .transition()
             .duration(1000)
@@ -79,21 +96,13 @@ const HeatTreatmentChart: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            const randomNumber = Math.floor(Math.random() * 40 + 50);
-            setData((pre) => [...pre, {stage: "정상화", value: randomNumber}]);
-            setFullStages([...data.map((d) => d.stage), "다음 단계", "최종 단계"]);
-        }, 5000);
-
-        return () => clearTimeout(timer);
-    }, [data]);
-
-    useEffect(() => {
         if (!svgRef.current) return;
 
+        if (data.length < 1) return
+
         const svg = d3.select(svgRef.current);
-        const width = 700;
-        const height = 300;
+        const width = 500;
+        const height = 200;
         const margin = { top: 20, right: 20, bottom: 100, left: 20 };
         const chartWidth = width - margin.left - margin.right;
 
@@ -106,7 +115,7 @@ const HeatTreatmentChart: React.FC = () => {
 
         const y = d3
             .scaleLinear()
-            .domain([0, 100])
+            .domain([0, 120])
             .range([height - margin.bottom, margin.top]);
 
         const line = d3
@@ -133,8 +142,6 @@ const HeatTreatmentChart: React.FC = () => {
             .duration(1000)
             .attr('x', margin.left)
             .attr('y', margin.top)
-            .transition()
-            .duration(1000)
             .attr('width', x(data.length - 1) - margin.left)
             .attr('height', height - margin.top - margin.bottom)
             .attr('fill', '#242424');  // 연한 녹색 배경
@@ -146,18 +153,18 @@ const HeatTreatmentChart: React.FC = () => {
                 .append("linearGradient")
                 .attr("id", "area-gradient")
                 .attr("gradientUnits", "userSpaceOnUse")
-                .attr("x1", margin.left)
+                .attr("x1", x(data.length - 2) - margin.left)
                 .attr("y1", 0)
-                .attr("x2", width - margin.right)
+                .attr("x2", x(data.length - 1) - margin.left)
                 .attr("y2", 0)
             : svg
                 .select("defs")
                 .select("linearGradient")
                 .attr("id", "area-gradient")
                 .attr("gradientUnits", "userSpaceOnUse")
-                .attr("x1", margin.left)
+                .attr("x1", x(data.length - 2) -margin.left)
                 .attr("y1", 0)
-                .attr("x2", width - margin.right)
+                .attr("x2", x(data.length - 1) - margin.left)
                 .attr("y2", 0);
 
         gradient
@@ -168,12 +175,12 @@ const HeatTreatmentChart: React.FC = () => {
         gradient
             .append("stop")
             .attr("offset", "50%")
-            .attr("stop-color", "rgba(46, 204, 113, 0)");
+            .attr("stop-color", "rgba(46, 204, 113, 0.05)");
 
         gradient
             .append("stop")
             .attr("offset", "100%")
-            .attr("stop-color", "rgba(46, 204, 113, 0.5)");
+            .attr("stop-color", "rgba(46, 204, 113, 0.1)");
 
         // 라인 그라데이션 정의
         const lineGradient = svg.select("#line-gradient").empty()
@@ -184,14 +191,14 @@ const HeatTreatmentChart: React.FC = () => {
                 .attr("gradientUnits", "userSpaceOnUse")
                 .attr("x1", margin.left)
                 .attr("y1", 0)
-                .attr("x2", width - margin.right)
+                .attr("x2", x(data.length - 1) - margin.left)
                 .attr("y2", 0)
             : svg
                 .select("#line-gradient")
                 .attr("gradientUnits", "userSpaceOnUse")
                 .attr("x1", margin.left)
                 .attr("y1", 0)
-                .attr("x2", width - margin.right)
+                .attr("x2", x(data.length - 1) - margin.left)
                 .attr("y2", 0);
 
         lineGradient
@@ -301,9 +308,6 @@ const HeatTreatmentChart: React.FC = () => {
             .attr("fill", "#2ecc71");
     }, [data]);
 
-    useEffect(() => {
-
-    }, [])
 
     return <main><svg ref={svgRef} style={{ position: "absolute" }}></svg><svg ref={svgRef2}></svg></main>;
 };
