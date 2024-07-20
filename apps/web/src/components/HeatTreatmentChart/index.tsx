@@ -281,7 +281,7 @@ const HeatTreatmentChart: React.FC = () => {
         }
 
         // 진행 바
-        const progressBarHeight = 10;
+        const progressBarHeight = 5;
         const progressBarY = height - margin.bottom;
 
         // 전체 바
@@ -358,7 +358,7 @@ const HeatTreatmentChart: React.FC = () => {
             .attr('y', progressBarY + progressBarHeight + 30)
             .attr('text-anchor', 'middle')
             .attr('font-size', '10px')
-            .attr('fill', '#fff')
+            .attr('fill', (d) => (data.length > 0 && d === data[data.length - 1].stage) ? '#2ecc71' : '#e0e0e0')
             .text(d => d);
 
         // 현재 스테이지 그라데이션 추가
