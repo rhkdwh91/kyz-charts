@@ -3,8 +3,6 @@ import * as d3 from "d3";
 
 const datas = [
     { stage: "온도 하강", value: 40 },
-    { stage: "온도 하강", value: 40 },
-    { stage: "온도 하강", value: 30 },
     { stage: "온도 하강", value: 30 },
     { stage: "온도 유지", value: 30 },
     { stage: "온도 유지", value: 30 },
@@ -151,7 +149,7 @@ const HeatTreatmentChart: React.FC = () => {
         if (data.length > 0) {
 
             // 그라데이션 정의
-            const gradient = svg.select("defs").empty()
+            const gradient = svg.select("#area-gradient").empty()
                 ? svg
                     .append("defs")
                     .append("linearGradient")
@@ -162,9 +160,7 @@ const HeatTreatmentChart: React.FC = () => {
                     .attr("x2", x(data.length - 1) - margin.left)
                     .attr("y2", 0)
                 : svg
-                    .select("defs")
-                    .select("linearGradient")
-                    .attr("id", "area-gradient")
+                    .select("#area-gradient")
                     .attr("gradientUnits", "userSpaceOnUse")
                     .attr("x1", x(data.length - 2) - margin.left)
                     .attr("y1", 0)
@@ -221,31 +217,36 @@ const HeatTreatmentChart: React.FC = () => {
                 .attr("stop-color", "rgba(19, 242, 135, 0.01)");
 
             // 영역 그래프 그리기
-
             const areaPath = svg.select<SVGPathElement>(".area-path").empty()
                 ? svg.append("path").attr("class", "area-path")
                 : svg.select<SVGPathElement>(".area-path");
 
             areaPath
                 .datum(data)
-                .attr("fill", "url(#area-gradient)")
                 .transition()
-                .duration(1000)
+                .duration(1000) // 애니메이션 지속 시간 (밀리초)
+                .ease(d3.easeLinear) // 선형 이징 함수 사용
+                .attr("fill", "url(#area-gradient)")
                 .attr("d", area);
 
             // 라인 그래프 그리기
-            const linePath = svg.select<SVGPathElement>(".line-path").empty()
-                ? svg.append("path").attr("class", "line-path")
-                : svg.select<SVGPathElement>(".line-path");
+            svg.select<SVGPathElement>(".line-path").empty()
+                ? svg.append("path").attr("class", "line-path").datum(data)
+                    .transition()
+                    .duration(1000) // 애니메이션 지속 시간 (밀리초)
+                    .ease(d3.easeLinear) // 선형 이징 함수 사용
+                    .attr("fill", "none")
+                    .attr("stroke", "url(#line-gradient)")
+                    .attr("stroke-width", 1)
+                    .attr("d", line)
+                : svg.select<SVGPathElement>(".line-path").datum(data)
+                    .transition()
+                    .duration(1000) // 애니메이션 지속 시간 (밀리초)
+                    .ease(d3.easeLinear)
+                    .attr("fill", "none")
+                    .attr("stroke", "url(#line-gradient)")
+                    .attr("stroke-width", 1).attr("d", line) // 선형 이징 함수 사용.attr("d", line);
 
-            linePath
-                .datum(data)
-                .attr("fill", "none")
-                .attr("stroke", "url(#line-gradient)")
-                .attr("stroke-width", 1)
-                .transition()
-                .duration(1000)
-                .attr("d", line);
 
             // 현재 데이터 포인트만 표시 (마지막 데이터)
             const currentData = data[data.length - 1];
@@ -361,23 +362,53 @@ const HeatTreatmentChart: React.FC = () => {
             .attr('fill', (d) => (data.length > 0 && d === data[data.length - 1].stage) ? '#2ecc71' : '#e0e0e0')
             .text(d => d);
 
+        // 네온 효과를 위한 필터 정의
+        const filterId = "neon-glow";
+        const filter = svg.select(`#${filterId}`).empty()
+            ? svg.append("defs").append("filter").attr("id", filterId).attr("x", "-50%")
+                .attr("y", "-50%")
+                .attr("width", "1000%")
+                .attr("height", "1000%")
+            : svg.select(`#${filterId}`).attr("x", "-50%")
+                .attr("y", "-100%")
+                .attr("width", "700%")
+                .attr("height", "700%");
+
+        filter.append("feGaussianBlur")
+            .attr("stdDeviation", "3.5")
+            .attr("result", "coloredBlur");
+
+        const feMerge = filter.append("feMerge");
+        feMerge.append("feMergeNode").attr("in", "coloredBlur");
+        feMerge.append("feMergeNode").attr("in", "SourceGraphic");
+
         // 현재 스테이지 그라데이션 추가
         if (data.length > 0) {
             const currentStage = data[data.length - 1].stage;
             const nextStageIndex = FullState.findIndex((stage) => stage === data[data.length - 1].stage) + 1
             const nextStage = FullState[nextStageIndex]
             const stageRect = svg.select<SVGRectElement>(".stage-guide-line").empty()
-                ? svg.append("rect").attr("class", "stage-guide-line")
-                : svg.select<SVGRectElement>(".stage-guide-line");
-            if (nextStage && stageRect) {
-                stageRect
-                    .attr('x', (stageScale(currentStage) ?? 0))
+                ? svg.append("rect")
+                    .attr("class", "stage-guide-line")
+                    .attr('width', 0)
+                    .attr('x', (stageScale(currentStage) ?? 0) + rectSize)
                     .attr('y', progressBarY + progressBarHeight + 40)
-                    .attr('width', 50)
-                    .attr('height', 1)
-                    .attr('fill', `#00dd6d`)
-                    .transition()
-                    .duration(3000);
+                : svg.select<SVGRectElement>(".stage-guide-line")
+                    .attr('width', 0)
+                    .attr('x', (stageScale(currentStage) ?? 0) + rectSize)
+                    .attr('y', progressBarY + progressBarHeight + 40);
+            if (nextStage && stageRect) {
+                function repeatAnimation () {
+                    stageRect
+                        .transition()
+                        .duration(1000)
+                        .attr('width', (chartWidth / (FullState.length - 1)) - rectSize)
+                        .attr('height', 1)
+                        .attr('fill', `#00dd6d`)
+                        .attr('filter', `url("#${filterId}")`)
+                        .on('end', repeatAnimation);
+                }
+                repeatAnimation()
             } else {
                 stageRect.remove()
             }
