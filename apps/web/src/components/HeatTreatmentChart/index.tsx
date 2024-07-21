@@ -155,14 +155,14 @@ const HeatTreatmentChart: React.FC = () => {
                     .append("linearGradient")
                     .attr("id", "area-gradient")
                     .attr("gradientUnits", "userSpaceOnUse")
-                    .attr("x1", x(data.length - 2) - margin.left)
+                    .attr("x1", x(data.length - 1) - margin.left * 2)
                     .attr("y1", 0)
                     .attr("x2", x(data.length - 1) - margin.left)
                     .attr("y2", 0)
                 : svg
                     .select("#area-gradient")
                     .attr("gradientUnits", "userSpaceOnUse")
-                    .attr("x1", x(data.length - 2) - margin.left)
+                    .attr("x1", x(data.length - 1) - margin.left * 2)
                     .attr("y1", 0)
                     .attr("x2", x(data.length - 1) - margin.left)
                     .attr("y2", 0);
