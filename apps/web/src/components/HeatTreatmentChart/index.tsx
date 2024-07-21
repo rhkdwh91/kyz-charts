@@ -259,7 +259,7 @@ const HeatTreatmentChart: React.FC = () => {
                 .duration(1000)
                 .attr("cx", x(data.length - 1))
                 .attr("cy", y(currentData.value) - 20)
-                .attr("r", 3)
+                .attr("r", 2)
                 .attr("fill", "#2ecc71")
                 .attr("stroke", "#2ecc71")
                 .attr("stroke-width", 2);
