@@ -348,14 +348,14 @@ const HeatTreatmentChart: React.FC = () => {
 
         const stageLabelScale = d3.scaleBand()
             .domain(FullState)
-            .range([margin.left + 17, (width + margin.left + margin.right) + (FullState.length * rectSize) - 10])
+            .range([margin.left, (width + margin.left + margin.right) + (FullState.length * rectSize)])
             .padding(0);
 
         svg.selectAll('.stage-label')
             .data(FullState)
             .join('text')
             .attr('class', 'stage-label')
-            .attr('x', d => stageLabelScale(d) ?? 0)
+            .attr('x', d => d === "온도 하강" ? margin.left + 17 : d === "정상화" ? width - margin.right - 10 : stageLabelScale(d) ?? 0)
             .attr('y', progressBarY + progressBarHeight + 30)
             .attr('text-anchor', 'middle')
             .attr('font-size', '10px')
